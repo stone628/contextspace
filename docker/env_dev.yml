@@ -1,0 +1,26 @@
+services:
+  valkey:
+    image: valkey/valkey:latest
+    container_name: contextspace-valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey-data:/data
+    restart: unless-stopped
+
+  postgresql:
+    image: postgres:latest
+    container_name: contextspace-postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: contextspace
+      POSTGRES_PASSWORD: contextspace
+      POSTGRES_DB: contextspace
+    volumes:
+      - postgresql-data:/var/lib/postgresql
+    restart: unless-stopped
+
+volumes:
+  valkey-data:
+  postgresql-data:

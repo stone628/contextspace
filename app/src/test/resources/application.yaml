@@ -1,0 +1,17 @@
+database:
+  url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
+  driver: "org.h2.Driver"
+  user: "sa"
+  password: ""
+  poolSize: 2
+
+redis:
+  uri: "redis://localhost:6379"
+
+jwt:
+  authSecret: "test-auth-secret"
+  authIssuer: "contextspace-test"
+  authExpiresInMinutes: 5
+  refreshSecret: "test-refresh-secret"
+  refreshIssuer: "contextspace-test"
+  refreshExpiresInDays: 7

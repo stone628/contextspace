@@ -1,0 +1,79 @@
+package dev.stoneworks.contextspace.auth
+
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.interfaces.DecodedJWT
+import io.ktor.server.config.ApplicationConfig
+import java.util.Date
+import java.util.UUID
+
+object JwtUtils {
+
+    private lateinit var authAlgorithm: Algorithm
+    private lateinit var refreshAlgorithm: Algorithm
+    private lateinit var authIssuer: String
+    private lateinit var refreshIssuer: String
+    private var authExpiresInMs: Long = 0
+    private var refreshExpiresInMs: Long = 0
+
+    fun init(config: ApplicationConfig) {
+        val jwtConfig = config.config("jwt")
+        val authSecret = jwtConfig.property("authSecret").getString()
+        val refreshSecret = jwtConfig.property("refreshSecret").getString()
+        authIssuer = jwtConfig.property("authIssuer").getString()
+        refreshIssuer = jwtConfig.property("refreshIssuer").getString()
+        authExpiresInMs = jwtConfig.property("authExpiresInMinutes").getString().toLong() * 60 * 1000
+        refreshExpiresInMs = jwtConfig.property("refreshExpiresInDays").getString().toLong() * 24 * 60 * 60 * 1000
+        authAlgorithm = Algorithm.HMAC256(authSecret)
+        refreshAlgorithm = Algorithm.HMAC256(refreshSecret)
+    }
+
+    fun generateAuthToken(userId: Long, username: String): String {
+        val now = Date()
+        return JWT.create()
+            .withJWTId(UUID.randomUUID().toString())
+            .withIssuer(authIssuer)
+            .withSubject(userId.toString())
+            .withClaim("username", username)
+            .withIssuedAt(now)
+            .withExpiresAt(Date(now.time + authExpiresInMs))
+            .sign(authAlgorithm)
+    }
+
+    fun generateRefreshToken(userId: Long): String {
+        val now = Date()
+        return JWT.create()
+            .withJWTId(UUID.randomUUID().toString())
+            .withIssuer(refreshIssuer)
+            .withSubject(userId.toString())
+            .withIssuedAt(now)
+            .withExpiresAt(Date(now.time + refreshExpiresInMs))
+            .sign(refreshAlgorithm)
+    }
+
+    fun verifyAuthToken(token: String): DecodedJWT? {
+        return try {
+            JWT.require(authAlgorithm)
+                .withIssuer(authIssuer)
+                .build()
+                .verify(token)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun verifyRefreshToken(token: String): DecodedJWT? {
+        return try {
+            JWT.require(refreshAlgorithm)
+                .withIssuer(refreshIssuer)
+                .build()
+                .verify(token)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun isExpired(jwt: DecodedJWT): Boolean {
+        return jwt.expiresAt.before(Date())
+    }
+}

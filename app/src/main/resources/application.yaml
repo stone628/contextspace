@@ -1,0 +1,24 @@
+ktor:
+  application:
+    modules:
+      - "dev.stoneworks.contextspace.ApplicationKt.module"
+  deployment:
+    port: 8080
+
+database:
+  url: "jdbc:postgresql://localhost:5432/contextspace"
+  driver: "org.postgresql.Driver"
+  user: "contextspace"
+  password: "contextspace"
+  poolSize: 10
+
+redis:
+  uri: "redis://localhost:6379"
+
+jwt:
+  authSecret: "change-me-in-production"
+  authIssuer: "contextspace"
+  authExpiresInMinutes: 5
+  refreshSecret: "change-me-too-in-production"
+  refreshIssuer: "contextspace"
+  refreshExpiresInDays: 7

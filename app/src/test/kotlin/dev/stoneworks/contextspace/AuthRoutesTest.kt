@@ -7,6 +7,7 @@ import dev.stoneworks.contextspace.models.AuthResponse
 import dev.stoneworks.contextspace.models.ErrorResponse
 import dev.stoneworks.contextspace.models.LoginRequest
 import dev.stoneworks.contextspace.models.RefreshRequest
+import dev.stoneworks.contextspace.tables.UsersContent
 import dev.stoneworks.contextspace.tables.Users
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -80,7 +81,7 @@ class AuthRoutesTest {
                 SchemaUtils.create(Users)
                 Users.insert {
                     it[username] = "testuser"
-                    it[passwordHash] = PasswordHasher.hash("testpass")
+                    it[content] = UsersContent(passwordHash = PasswordHasher.hash("testpass"))
                 }
             }
         }

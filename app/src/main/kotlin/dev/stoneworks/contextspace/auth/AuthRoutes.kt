@@ -1,6 +1,5 @@
 package dev.stoneworks.contextspace.auth
 
-import dev.stoneworks.contextspace.dao.RefreshTokenDao
 import dev.stoneworks.contextspace.dao.UserDao
 import dev.stoneworks.contextspace.models.AuthResponse
 import dev.stoneworks.contextspace.models.ErrorResponse
@@ -35,6 +34,8 @@ fun Route.authRoutes() {
 
         val authToken = JwtUtils.generateAuthToken(user.id, user.username)
         val refreshToken = JwtUtils.generateRefreshToken(user.id)
+        val expiresAt = DateTimeUtil.now().plusDays(7)
+        UserDao.saveRefreshToken(user.id, refreshToken, expiresAt)
 
         call.respond(HttpStatusCode.Created, AuthResponse(authToken = authToken, refreshToken = refreshToken))
     }
@@ -57,7 +58,7 @@ fun Route.authRoutes() {
         val refreshToken = JwtUtils.generateRefreshToken(user.id)
 
         val expiresAt = DateTimeUtil.now().plusDays(7)
-        RefreshTokenDao.create(refreshToken, user.id, expiresAt)
+        UserDao.saveRefreshToken(user.id, refreshToken, expiresAt)
 
         call.respond(HttpStatusCode.OK, AuthResponse(authToken = authToken, refreshToken = refreshToken))
     }
@@ -78,8 +79,8 @@ fun Route.authRoutes() {
             val decoded = JwtUtils.verifyRefreshToken(request.refreshToken)
             if (decoded != null && !JwtUtils.isExpired(decoded)) {
                 userId = decoded.subject?.toLongOrNull()
-                val stored = RefreshTokenDao.findByToken(request.refreshToken)
-                if (stored == null || stored.revoked) {
+                val user = userId?.let { UserDao.findById(it) }
+                if (user == null || user.refreshToken != request.refreshToken || user.refreshTokenRevoked) {
                     call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Refresh token revoked or not found"))
                     return@post
                 }
@@ -101,7 +102,7 @@ fun Route.authRoutes() {
         val newAuthToken = JwtUtils.generateAuthToken(user.id, user.username)
         val newRefreshToken = JwtUtils.generateRefreshToken(user.id)
         val expiresAt = DateTimeUtil.now().plusDays(7)
-        RefreshTokenDao.create(newRefreshToken, user.id, expiresAt)
+        UserDao.saveRefreshToken(user.id, newRefreshToken, expiresAt)
 
         call.respond(HttpStatusCode.OK, AuthResponse(authToken = newAuthToken, refreshToken = newRefreshToken))
     }

@@ -16,8 +16,8 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 20)
 |---|---|
 | `app/build.gradle.kts` | Ktor 3.1 + kotlinx.serialization + Exposed 0.57 + BCrypt |
 | `app/src/main/kotlin/dev/stoneworks/contextspace/` | Source root |
-| `.../tables/` | Exposed table definitions (`users`, `refresh_tokens`) |
-| `.../dao/` | Repository layer (`UserDao`, `RefreshTokenDao`) |
+| `.../tables/` | Exposed table definitions (`users`) |
+| `.../dao/` | Repository layer (`UserDao`) |
 | `.../auth/` | JWT utils, password hasher, route handlers |
 | `.../models/` | Request/response DTOs |
 | `docker/env_dev.yml` | Valkey + PostgreSQL for local dev |

@@ -3,7 +3,6 @@ package dev.stoneworks.contextspace
 import dev.stoneworks.contextspace.auth.JwtUtils
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.ErrorResponse
-import dev.stoneworks.contextspace.tables.RefreshTokens
 import dev.stoneworks.contextspace.tables.Users
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -29,7 +28,7 @@ fun Application.module() {
 
     runBlocking {
         newSuspendedTransaction {
-            SchemaUtils.create(Users, RefreshTokens)
+            SchemaUtils.create(Users)
         }
     }
 

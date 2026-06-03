@@ -24,6 +24,7 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 20)
 
 ## API
 
+- `POST /auth/register` — `{ username, password }` → `{ authToken, refreshToken }` (201)
 - `POST /auth/login` — `{ username, password }` → `{ authToken, refreshToken }`
 - `POST /auth/refresh` — `{ authToken }` or `{ refreshToken }` → `{ authToken, refreshToken }`
 

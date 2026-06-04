@@ -76,12 +76,13 @@ object UserDao {
         }
     }
 
-    suspend fun updateNickname(userId: Long, nickname: String) = retryTransaction {
-        val row = findById(userId) ?: return@retryTransaction
+    suspend fun updateNickname(userId: Long, nickname: String): UserRow? = retryTransaction {
+        val row = findById(userId) ?: return@retryTransaction null
         val updated = toContent(row).copy(nickname = nickname)
         Users.update({ Users.id eq userId }) {
             it[content] = updated
         }
+        row.copy(nickname = nickname)
     }
 
     suspend fun revokeRefreshToken(userId: Long) = retryTransaction {

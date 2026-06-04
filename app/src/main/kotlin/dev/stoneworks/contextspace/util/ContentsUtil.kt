@@ -1,5 +1,8 @@
 package dev.stoneworks.contextspace.util
 
+import dev.stoneworks.contextspace.auth.JwtUtils
+import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.header
 import kotlinx.coroutines.delay
 import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.Transaction
@@ -18,4 +21,13 @@ suspend fun <T> retryTransaction(
         }
     }
     return newSuspendedTransaction { block() }
+}
+
+fun ApplicationCall.authUserId(): Long? {
+    val header = request.header("Authorization") ?: return null
+    val token = header.removePrefix("Bearer ").trim()
+    if (token.isBlank()) return null
+    val decoded = JwtUtils.verifyAuthToken(token) ?: return null
+    if (JwtUtils.isExpired(decoded)) return null
+    return decoded.subject?.toLongOrNull()
 }

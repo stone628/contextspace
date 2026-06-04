@@ -4,6 +4,7 @@ import dev.stoneworks.contextspace.tables.UsersContent
 import dev.stoneworks.contextspace.tables.UserRow
 import dev.stoneworks.contextspace.tables.Users
 import dev.stoneworks.contextspace.util.DateTimeUtil
+import dev.stoneworks.contextspace.util.retryTransaction
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert
@@ -19,6 +20,7 @@ object UserDao {
             id = it[Users.id],
             username = it[Users.username],
             passwordHash = c.passwordHash,
+            nickname = c.nickname.ifBlank { it[Users.username] },
             createdAt = it[Users.createdAt],
             refreshToken = c.refreshToken,
             refreshTokenExpiresAt = c.refreshTokenExpiresAt?.let(DateTimeUtil::fromEpochMillis),
@@ -28,18 +30,19 @@ object UserDao {
 
     private fun toContent(row: UserRow) = UsersContent(
         passwordHash = row.passwordHash,
+        nickname = row.nickname,
         refreshToken = row.refreshToken,
         refreshTokenExpiresAt = row.refreshTokenExpiresAt?.let(DateTimeUtil::toEpochMillis),
         refreshTokenRevoked = row.refreshTokenRevoked,
     )
 
-    suspend fun findByUsername(username: String): UserRow? = newSuspendedTransaction {
+    suspend fun findByUsername(username: String): UserRow? = newSuspendedTransaction(readOnly = true) {
         Users.selectAll().where(Users.username eq username).singleOrNull()?.let(::toRow)
     }
 
-    suspend fun create(username: String, passwordHash: String): UserRow = newSuspendedTransaction {
+    suspend fun create(username: String, passwordHash: String): UserRow = retryTransaction {
         val createdAt = DateTimeUtil.now()
-        val content = UsersContent(passwordHash = passwordHash)
+        val content = UsersContent(passwordHash = passwordHash, nickname = username)
         val insert = Users.insert {
             it[Users.username] = username
             it[Users.content] = content
@@ -49,6 +52,7 @@ object UserDao {
             id = insert[Users.id],
             username = username,
             passwordHash = content.passwordHash,
+            nickname = content.nickname,
             createdAt = createdAt,
             refreshToken = content.refreshToken,
             refreshTokenExpiresAt = content.refreshTokenExpiresAt?.let(DateTimeUtil::fromEpochMillis),
@@ -56,12 +60,12 @@ object UserDao {
         )
     }
 
-    suspend fun findById(id: Long): UserRow? = newSuspendedTransaction {
+    suspend fun findById(id: Long): UserRow? = newSuspendedTransaction(readOnly = true) {
         Users.selectAll().where(Users.id eq id).singleOrNull()?.let(::toRow)
     }
 
-    suspend fun saveRefreshToken(userId: Long, token: String, expiresAt: LocalDateTime) = newSuspendedTransaction {
-        val row = findById(userId) ?: return@newSuspendedTransaction
+    suspend fun saveRefreshToken(userId: Long, token: String, expiresAt: LocalDateTime) = retryTransaction {
+        val row = findById(userId) ?: return@retryTransaction
         val updated = toContent(row).copy(
             refreshToken = token,
             refreshTokenExpiresAt = DateTimeUtil.toEpochMillis(expiresAt),
@@ -72,8 +76,16 @@ object UserDao {
         }
     }
 
-    suspend fun revokeRefreshToken(userId: Long) = newSuspendedTransaction {
-        val row = findById(userId) ?: return@newSuspendedTransaction
+    suspend fun updateNickname(userId: Long, nickname: String) = retryTransaction {
+        val row = findById(userId) ?: return@retryTransaction
+        val updated = toContent(row).copy(nickname = nickname)
+        Users.update({ Users.id eq userId }) {
+            it[content] = updated
+        }
+    }
+
+    suspend fun revokeRefreshToken(userId: Long) = retryTransaction {
+        val row = findById(userId) ?: return@retryTransaction
         val updated = toContent(row).copy(refreshTokenRevoked = true)
         Users.update({ Users.id eq userId }) {
             it[content] = updated

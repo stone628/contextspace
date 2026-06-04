@@ -30,3 +30,14 @@ data class AuthResponse(
 data class ErrorResponse(
     val error: String,
 )
+
+@Serializable
+data class ProfileResponse(
+    val username: String,
+    val nickname: String,
+)
+
+@Serializable
+data class UpdateNicknameRequest(
+    val nickname: String,
+)

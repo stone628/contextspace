@@ -1,6 +1,7 @@
 package dev.stoneworks.contextspace
 
 import dev.stoneworks.contextspace.auth.JwtUtils
+import dev.stoneworks.contextspace.auth.accountRoutes
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.ErrorResponse
 import dev.stoneworks.contextspace.tables.Users
@@ -47,5 +48,6 @@ fun Application.module() {
 
     routing {
         authRoutes()
+        accountRoutes()
     }
 }

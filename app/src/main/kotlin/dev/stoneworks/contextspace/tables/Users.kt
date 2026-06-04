@@ -21,6 +21,7 @@ data class UserRow(
     val id: Long,
     val username: String,
     val passwordHash: String,
+    val nickname: String,
     val createdAt: java.time.LocalDateTime,
     val refreshToken: String? = null,
     val refreshTokenExpiresAt: java.time.LocalDateTime? = null,
@@ -30,6 +31,7 @@ data class UserRow(
 @Serializable
 data class UsersContent(
     val passwordHash: String,
+    val nickname: String = "",
     val refreshToken: String? = null,
     val refreshTokenExpiresAt: Long? = null,
     val refreshTokenRevoked: Boolean = false,

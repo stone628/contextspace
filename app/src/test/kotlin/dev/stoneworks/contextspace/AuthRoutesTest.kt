@@ -2,16 +2,23 @@ package dev.stoneworks.contextspace
 
 import dev.stoneworks.contextspace.auth.JwtUtils
 import dev.stoneworks.contextspace.auth.PasswordHasher
+import dev.stoneworks.contextspace.auth.accountRoutes
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.AuthResponse
 import dev.stoneworks.contextspace.models.ErrorResponse
 import dev.stoneworks.contextspace.models.LoginRequest
+import dev.stoneworks.contextspace.models.ProfileResponse
 import dev.stoneworks.contextspace.models.RefreshRequest
+import dev.stoneworks.contextspace.models.RegisterRequest
+import dev.stoneworks.contextspace.models.UpdateNicknameRequest
 import dev.stoneworks.contextspace.tables.UsersContent
 import dev.stoneworks.contextspace.tables.Users
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -59,6 +66,7 @@ private fun Application.testModule() {
 
     routing {
         authRoutes()
+        accountRoutes()
     }
 }
 
@@ -219,6 +227,113 @@ class AuthRoutesTest {
             setBody(RefreshRequest())
         }
 
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun `get profile without token returns unauthorized`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val response = client.get("/account/profile")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `get profile with valid token returns username and nickname`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val registerResponse = client.post("/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(username = "profileuser", password = "testpass"))
+        }
+        val registerBody = registerResponse.body<AuthResponse>()
+
+        val response = client.get("/account/profile") {
+            bearerAuth(registerBody.authToken)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = response.body<ProfileResponse>()
+        assertEquals("profileuser", body.username)
+        assertEquals("profileuser", body.nickname)
+    }
+
+    @Test
+    fun `update nickname with valid token returns updated profile`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val loginResponse = client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(username = "testuser", password = "testpass"))
+        }
+        val loginBody = loginResponse.body<AuthResponse>()
+
+        val response = client.put("/account/profile") {
+            bearerAuth(loginBody.authToken)
+            contentType(ContentType.Application.Json)
+            setBody(UpdateNicknameRequest(nickname = "NewNick"))
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = response.body<ProfileResponse>()
+        assertEquals("testuser", body.username)
+        assertEquals("NewNick", body.nickname)
+    }
+
+    @Test
+    fun `update nickname without token returns unauthorized`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val response = client.put("/account/profile") {
+            contentType(ContentType.Application.Json)
+            setBody(UpdateNicknameRequest(nickname = "NewNick"))
+        }
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
+    }
+
+    @Test
+    fun `update nickname with empty nickname returns bad request`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val loginResponse = client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(username = "testuser", password = "testpass"))
+        }
+        val loginBody = loginResponse.body<AuthResponse>()
+
+        val response = client.put("/account/profile") {
+            bearerAuth(loginBody.authToken)
+            contentType(ContentType.Application.Json)
+            setBody(UpdateNicknameRequest(nickname = ""))
+        }
         assertEquals(HttpStatusCode.BadRequest, response.status)
     }
 }

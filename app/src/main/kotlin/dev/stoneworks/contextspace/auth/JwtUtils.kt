@@ -3,9 +3,11 @@ package dev.stoneworks.contextspace.auth
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
-import io.ktor.server.config.ApplicationConfig
-import java.util.Date
-import java.util.UUID
+import dev.stoneworks.contextspace.util.DateTimeUtil
+import io.ktor.server.config.*
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import java.util.*
 
 object JwtUtils {
 
@@ -28,26 +30,24 @@ object JwtUtils {
         refreshAlgorithm = Algorithm.HMAC256(refreshSecret)
     }
 
-    fun generateAuthToken(userId: Long, username: String): String {
-        val now = Date()
+    fun generateAuthToken(userId: Long, username: String, now: LocalDateTime): String {
         return JWT.create()
             .withJWTId(UUID.randomUUID().toString())
             .withIssuer(authIssuer)
             .withSubject(userId.toString())
             .withClaim("username", username)
-            .withIssuedAt(now)
-            .withExpiresAt(Date(now.time + authExpiresInMs))
+            .withIssuedAt(DateTimeUtil.toInstant(now))
+            .withExpiresAt(DateTimeUtil.toDate(now.plus(authExpiresInMs, ChronoUnit.MILLIS)))
             .sign(authAlgorithm)
     }
 
-    fun generateRefreshToken(userId: Long): String {
-        val now = Date()
+    fun generateRefreshToken(userId: Long, now: LocalDateTime): String {
         return JWT.create()
             .withJWTId(UUID.randomUUID().toString())
             .withIssuer(refreshIssuer)
             .withSubject(userId.toString())
-            .withIssuedAt(now)
-            .withExpiresAt(Date(now.time + refreshExpiresInMs))
+            .withIssuedAt(DateTimeUtil.toInstant(now))
+            .withExpiresAt(DateTimeUtil.toDate(now.plus(refreshExpiresInMs, ChronoUnit.MILLIS)))
             .sign(refreshAlgorithm)
     }
 
@@ -73,7 +73,7 @@ object JwtUtils {
         }
     }
 
-    fun isExpired(jwt: DecodedJWT): Boolean {
-        return jwt.expiresAt.before(Date())
+    fun isExpired(jwt: DecodedJWT, now: LocalDateTime): Boolean {
+        return jwt.expiresAt.before(DateTimeUtil.toDate(now))
     }
 }

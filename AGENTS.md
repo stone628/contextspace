@@ -16,10 +16,11 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 20)
 |---|---|
 | `app/build.gradle.kts` | Ktor 3.1 + kotlinx.serialization + Exposed 0.57 + BCrypt |
 | `app/src/main/kotlin/dev/stoneworks/contextspace/` | Source root |
-| `.../tables/` | Exposed table definitions (`users`) |
+| `.../tables/` | Exposed table definitions (`Users`) |
 | `.../dao/` | Repository layer (`UserDao`) |
 | `.../auth/` | JWT utils, password hasher, route handlers |
 | `.../models/` | Request/response DTOs |
+| `.../util/` | Route builders (`post<T>`, `authGet`, `authPut`), `DateTimeUtil`, `retryTransaction` |
 | `docker/env_dev.yml` | Valkey + PostgreSQL for local dev |
 
 ## Table schema policy
@@ -54,8 +55,12 @@ Steps to add a new table (e.g. `widgets`):
 - `POST /auth/register` — `{ username, password }` → `{ authToken, refreshToken }` (201)
 - `POST /auth/login` — `{ username, password }` → `{ authToken, refreshToken }`
 - `POST /auth/refresh` — `{ authToken }` or `{ refreshToken }` → `{ authToken, refreshToken }`
+- `GET /account/profile` — `{ username, nickname }` (auth required)
+- `PUT /account/profile` — `{ nickname }` → `{ username, nickname }` (auth required)
 
 Auth token expires in 5 min, refresh token in 7 days.
+
+Routes use typed builders: `post<T>`, `authGet`, `authPut`. Auth helpers extract the `userId` from the `Authorization: Bearer <token>` header. JWT token methods accept `LocalDateTime now` for deterministic testability.
 
 ## Infrastructure
 

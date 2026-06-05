@@ -1,23 +1,14 @@
 package dev.stoneworks.contextspace.auth
 
 import dev.stoneworks.contextspace.dao.UserDao
-import dev.stoneworks.contextspace.models.AuthResponse
-import dev.stoneworks.contextspace.models.ErrorResponse
-import dev.stoneworks.contextspace.models.LoginRequest
-import dev.stoneworks.contextspace.models.RefreshRequest
-import dev.stoneworks.contextspace.models.RegisterRequest
+import dev.stoneworks.contextspace.models.*
 import dev.stoneworks.contextspace.util.DateTimeUtil
-import io.ktor.http.HttpStatusCode
-import io.ktor.server.application.call
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.routing.Route
-import io.ktor.server.routing.post
+import io.ktor.http.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 
 fun Route.authRoutes() {
-    post("/auth/register") {
-        val request = call.receive<RegisterRequest>()
-
+    post<RegisterRequest>("/auth/register") { request ->
         if (request.username.isBlank() || request.password.isBlank()) {
             call.respond(HttpStatusCode.BadRequest, ErrorResponse("Username and password are required"))
             return@post
@@ -32,17 +23,16 @@ fun Route.authRoutes() {
         val passwordHash = PasswordHasher.hash(request.password)
         val user = UserDao.create(request.username, passwordHash)
 
-        val authToken = JwtUtils.generateAuthToken(user.id, user.username)
-        val refreshToken = JwtUtils.generateRefreshToken(user.id)
-        val expiresAt = DateTimeUtil.now().plusDays(7)
-        UserDao.saveRefreshToken(user.id, refreshToken, expiresAt)
+        val now = DateTimeUtil.now()
+        val authToken = JwtUtils.generateAuthToken(user.id, user.username, now)
+        val refreshToken = JwtUtils.generateRefreshToken(user.id, now)
+        val expiresAt = now.plusDays(7)
 
+        UserDao.saveRefreshToken(user.id, refreshToken, expiresAt)
         call.respond(HttpStatusCode.Created, AuthResponse(authToken = authToken, refreshToken = refreshToken))
     }
 
-    post("/auth/login") {
-        val request = call.receive<LoginRequest>()
-
+    post<LoginRequest>("/auth/login") { request ->
         val user = UserDao.findByUsername(request.username)
             ?: run {
                 call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Invalid credentials"))
@@ -54,22 +44,21 @@ fun Route.authRoutes() {
             return@post
         }
 
-        val authToken = JwtUtils.generateAuthToken(user.id, user.username)
-        val refreshToken = JwtUtils.generateRefreshToken(user.id)
+        val now = DateTimeUtil.now()
+        val authToken = JwtUtils.generateAuthToken(user.id, user.username, now)
+        val refreshToken = JwtUtils.generateRefreshToken(user.id, now)
+        val expiresAt = now.plusDays(7)
 
-        val expiresAt = DateTimeUtil.now().plusDays(7)
         UserDao.saveRefreshToken(user.id, refreshToken, expiresAt)
-
         call.respond(HttpStatusCode.OK, AuthResponse(authToken = authToken, refreshToken = refreshToken))
     }
 
-    post("/auth/refresh") {
-        val request = call.receive<RefreshRequest>()
+    post<RefreshRequest>("/auth/refresh") { request ->
         var userId: Long? = null
 
         if (!request.authToken.isNullOrBlank()) {
             val decoded = JwtUtils.verifyAuthToken(request.authToken)
-            if (decoded != null && !JwtUtils.isExpired(decoded)) {
+            if (decoded != null && !JwtUtils.isExpired(decoded, DateTimeUtil.now())) {
                 userId = decoded.subject?.toLongOrNull()
             } else {
                 call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Auth token expired or invalid"))
@@ -77,7 +66,7 @@ fun Route.authRoutes() {
             }
         } else if (!request.refreshToken.isNullOrBlank()) {
             val decoded = JwtUtils.verifyRefreshToken(request.refreshToken)
-            if (decoded != null && !JwtUtils.isExpired(decoded)) {
+            if (decoded != null && !JwtUtils.isExpired(decoded, DateTimeUtil.now())) {
                 userId = decoded.subject?.toLongOrNull()
                 val user = userId?.let { UserDao.findById(it) }
                 if (user == null || user.refreshToken != request.refreshToken || user.refreshTokenRevoked) {
@@ -99,11 +88,12 @@ fun Route.authRoutes() {
                 return@post
             }
 
-        val newAuthToken = JwtUtils.generateAuthToken(user.id, user.username)
-        val newRefreshToken = JwtUtils.generateRefreshToken(user.id)
-        val expiresAt = DateTimeUtil.now().plusDays(7)
-        UserDao.saveRefreshToken(user.id, newRefreshToken, expiresAt)
+        val now = DateTimeUtil.now()
+        val newAuthToken = JwtUtils.generateAuthToken(user.id, user.username, now)
+        val newRefreshToken = JwtUtils.generateRefreshToken(user.id, now)
+        val expiresAt = now.plusDays(7)
 
+        UserDao.saveRefreshToken(user.id, newRefreshToken, expiresAt)
         call.respond(HttpStatusCode.OK, AuthResponse(authToken = newAuthToken, refreshToken = newRefreshToken))
     }
 }

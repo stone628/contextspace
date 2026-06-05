@@ -27,6 +27,11 @@ fun Application.module() {
     JwtUtils.init(config)
     RedisConfig.init(config)
 
+    monitor.subscribe(ApplicationStopping) {
+        DatabaseConfig.close()
+        RedisConfig.close()
+    }
+
     runBlocking {
         newSuspendedTransaction {
             SchemaUtils.create(Users)

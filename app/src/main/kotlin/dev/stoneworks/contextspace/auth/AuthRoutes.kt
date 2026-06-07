@@ -6,20 +6,16 @@ import dev.stoneworks.common.util.InvalidParameterException
 import dev.stoneworks.common.util.RateLimiter
 import dev.stoneworks.common.util.StringUtil
 import dev.stoneworks.common.util.authPost
+import dev.stoneworks.common.util.clientIp
 import dev.stoneworks.contextspace.dao.UserDao
 import dev.stoneworks.contextspace.models.*
 import io.ktor.http.*
-import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
-private fun clientIp(call: ApplicationCall): String =
-    call.request.headers["X-Forwarded-For"]?.split(",")?.first()?.trim()
-        ?: "dev"
-
 fun Route.authRoutes() {
     post<RegisterRequest>("/auth/register") { request ->
-        if (RateLimiter.isLimited("rl:register:${clientIp(call)}", 5, 60)) {
+        if (RateLimiter.isLimited("rl:register:${call.clientIp()}", 5, 60)) {
             return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
         }
 
@@ -46,7 +42,7 @@ fun Route.authRoutes() {
     }
 
     post<LoginRequest>("/auth/login") { request ->
-        if (RateLimiter.isLimited("rl:login:${clientIp(call)}", 10, 60)) {
+        if (RateLimiter.isLimited("rl:login:${call.clientIp()}", 10, 60)) {
             return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
         }
 
@@ -71,11 +67,11 @@ fun Route.authRoutes() {
     }
 
     post<RefreshRequest>("/auth/refresh") { request ->
-        if (RateLimiter.isLimited("rl:refresh:${clientIp(call)}", 20, 60)) {
+        if (RateLimiter.isLimited("rl:refresh:${call.clientIp()}", 20, 60)) {
             return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
         }
 
-        var userId: Long? = null
+        var userId: Long?
 
         if (!request.authToken.isNullOrBlank()) {
             val decoded = JwtUtils.verifyAuthToken(request.authToken)

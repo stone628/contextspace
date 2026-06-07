@@ -32,6 +32,8 @@ fun CORSConfig.fromConfig(config: ApplicationConfig) {
     }
 }
 
+fun ApplicationCall.clientIp() = request.headers["X-Forwarded-For"]?.split(',')?.first()?.trim() ?: "dev"
+
 private fun userId(call: ApplicationCall): Long? {
     val header = call.request.header("Authorization") ?: return null
     val token = header.removePrefix("Bearer ").trim()

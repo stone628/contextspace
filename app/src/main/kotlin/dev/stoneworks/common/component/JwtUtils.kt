@@ -1,13 +1,13 @@
-package dev.stoneworks.contextspace.auth
+package dev.stoneworks.common.component
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
-import dev.stoneworks.contextspace.util.DateTimeUtil
-import io.ktor.server.config.*
+import dev.stoneworks.common.util.DateTimeUtil
+import io.ktor.server.config.ApplicationConfig
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.UUID
 
 object JwtUtils {
 

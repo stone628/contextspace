@@ -1,7 +1,7 @@
 package dev.stoneworks.contextspace
 
-import dev.stoneworks.contextspace.auth.JwtUtils
-import dev.stoneworks.contextspace.util.DateTimeUtil
+import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.DateTimeUtil
 import io.ktor.server.config.MapApplicationConfig
 import kotlin.test.BeforeTest
 import kotlin.test.Test

@@ -1,11 +1,11 @@
 package dev.stoneworks.contextspace.auth
 
+import dev.stoneworks.common.util.authGet
+import dev.stoneworks.common.util.authPut
 import dev.stoneworks.contextspace.dao.UserDao
 import dev.stoneworks.contextspace.models.ErrorResponse
 import dev.stoneworks.contextspace.models.ProfileResponse
 import dev.stoneworks.contextspace.models.UpdateNicknameRequest
-import dev.stoneworks.contextspace.util.authGet
-import dev.stoneworks.contextspace.util.authPut
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*

@@ -1,8 +1,10 @@
 package dev.stoneworks.contextspace.auth
 
+import dev.stoneworks.common.component.JwtUtils
 import dev.stoneworks.contextspace.dao.UserDao
 import dev.stoneworks.contextspace.models.*
-import dev.stoneworks.contextspace.util.DateTimeUtil
+import dev.stoneworks.common.util.DateTimeUtil
+import dev.stoneworks.common.util.StringUtil
 import io.ktor.http.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -20,7 +22,7 @@ fun Route.authRoutes() {
             return@post
         }
 
-        val passwordHash = PasswordHasher.hash(request.password)
+        val passwordHash = StringUtil.hashPassword(request.password)
         val user = UserDao.create(request.username, passwordHash)
 
         val now = DateTimeUtil.now()
@@ -39,7 +41,7 @@ fun Route.authRoutes() {
                 return@post
             }
 
-        if (!PasswordHasher.verify(request.password, user.passwordHash)) {
+        if (!StringUtil.verifyPassword(request.password, user.passwordHash)) {
             call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Invalid credentials"))
             return@post
         }

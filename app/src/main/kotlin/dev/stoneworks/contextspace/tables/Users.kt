@@ -1,6 +1,6 @@
 package dev.stoneworks.contextspace.tables
 
-import dev.stoneworks.contextspace.util.DateTimeUtil
+import dev.stoneworks.common.util.DateTimeUtil
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Table

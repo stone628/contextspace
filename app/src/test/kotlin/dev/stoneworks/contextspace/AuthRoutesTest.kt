@@ -1,7 +1,7 @@
 package dev.stoneworks.contextspace
 
-import dev.stoneworks.contextspace.auth.JwtUtils
-import dev.stoneworks.contextspace.auth.PasswordHasher
+import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.StringUtil
 import dev.stoneworks.contextspace.auth.accountRoutes
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.AuthResponse
@@ -89,7 +89,7 @@ class AuthRoutesTest {
                 SchemaUtils.create(Users)
                 Users.insert {
                     it[username] = "testuser"
-                    it[content] = UsersContent(passwordHash = PasswordHasher.hash("testpass"))
+                    it[content] = UsersContent(passwordHash = StringUtil.hashPassword("testpass"))
                 }
             }
         }

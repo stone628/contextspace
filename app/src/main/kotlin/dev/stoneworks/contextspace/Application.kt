@@ -1,6 +1,8 @@
 package dev.stoneworks.contextspace
 
-import dev.stoneworks.contextspace.auth.JwtUtils
+import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.InvalidRequestException
+import dev.stoneworks.common.util.UnauthorizedException
 import dev.stoneworks.contextspace.auth.accountRoutes
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.ErrorResponse
@@ -46,6 +48,12 @@ fun Application.module() {
     }
 
     install(StatusPages) {
+        exception<UnauthorizedException> { call, cause ->
+            call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message!!))
+        }
+        exception<InvalidRequestException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message!!))
+        }
         exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: "Internal error"))
         }

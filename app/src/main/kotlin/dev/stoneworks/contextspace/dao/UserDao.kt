@@ -3,8 +3,8 @@ package dev.stoneworks.contextspace.dao
 import dev.stoneworks.contextspace.tables.UsersContent
 import dev.stoneworks.contextspace.tables.UserRow
 import dev.stoneworks.contextspace.tables.Users
-import dev.stoneworks.contextspace.util.DateTimeUtil
-import dev.stoneworks.contextspace.util.retryTransaction
+import dev.stoneworks.common.util.DateTimeUtil
+import dev.stoneworks.common.util.retryTransaction
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insert

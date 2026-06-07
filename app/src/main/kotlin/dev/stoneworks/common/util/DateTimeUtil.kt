@@ -1,4 +1,4 @@
-package dev.stoneworks.contextspace.util
+package dev.stoneworks.common.util
 
 import java.sql.Date
 import java.time.Instant

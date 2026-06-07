@@ -1,6 +1,7 @@
 package dev.stoneworks.contextspace
 
 import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.InvalidParameterException
 import dev.stoneworks.common.util.InvalidRequestException
 import dev.stoneworks.common.util.UnauthorizedException
 import dev.stoneworks.common.util.fromConfig
@@ -58,6 +59,9 @@ fun Application.module() {
             call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message!!))
         }
         exception<InvalidRequestException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message!!))
+        }
+        exception<InvalidParameterException> { call, cause ->
             call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message!!))
         }
         exception<Throwable> { call, cause ->

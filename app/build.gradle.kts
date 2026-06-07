@@ -34,6 +34,7 @@ dependencies {
     implementation("at.favre.lib:bcrypt:0.10.2")
 
     implementation("ch.qos.logback:logback-classic:1.5.34")
+    implementation("io.github.oshai:kotlin-logging:8.0.4")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation(kotlin("test"))

@@ -7,10 +7,8 @@ import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.plugins.cors.CORSConfig
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import io.ktor.utils.io.*
 import kotlin.reflect.KClass
 
-@KtorDsl
 fun CORSConfig.fromConfig(config: ApplicationConfig) {
     val allowedHosts = config.propertyOrNull("cors.allowed_hosts")?.getList() ?: emptyList()
     val allowedMethods = config.propertyOrNull("cors.allowed_methods")?.getList() ?: emptyList()
@@ -46,7 +44,13 @@ private fun userId(call: ApplicationCall): Long? {
 }
 
 class UnauthorizedException(val method: HttpMethod, val path: String) : RuntimeException("Missing or invalid auth token")
+
 class InvalidRequestException(val method: HttpMethod, val path: String, cause: Exception) : RuntimeException("Invalid JSON request", cause)
+
+class InvalidParameterException(call: ApplicationCall, message: String): RuntimeException(message) {
+    val method = call.request.httpMethod
+    val path = call.request.path()
+}
 
 fun <T : Any> Route.method(method: HttpMethod, path: String, reqClass: KClass<T>, body: suspend RoutingContext.(req: T) -> Unit) =
     route(path, method) {
@@ -81,24 +85,16 @@ fun <T: Any> Route.authMethod(method: HttpMethod, path: String, reqClass: KClass
         }
     }
 
-@KtorDsl
 inline fun <reified T: Any> Route.get(path: String, noinline body: suspend RoutingContext.(req: T) -> Unit) = method(HttpMethod.Get, path, T::class, body)
 
-@KtorDsl
 inline fun <reified T: Any> Route.put(path: String, noinline body: suspend RoutingContext.(req: T) -> Unit) = method(HttpMethod.Put, path, T::class, body)
 
-@KtorDsl
 inline fun <reified T: Any> Route.post(path: String, noinline body: suspend RoutingContext.(req: T) -> Unit) = method(HttpMethod.Post, path, T::class, body)
 
-@KtorDsl
 fun Route.authGet(path: String, body: suspend RoutingContext.(userId: Long) -> Unit) = authMethod(HttpMethod.Get, path, body)
-@KtorDsl
 inline fun <reified T: Any> Route.authGet(path: String, noinline body: suspend RoutingContext.(userId: Long, req: T) -> Unit) = authMethod(HttpMethod.Get, path, T::class, body)
 
-@KtorDsl
 fun Route.authPut(path: String, body: suspend RoutingContext.(userId: Long) -> Unit) = authMethod(HttpMethod.Put, path, body)
-@KtorDsl
 inline fun <reified T: Any> Route.authPut(path: String, noinline body: suspend RoutingContext.(userId: Long, req: T) -> Unit) = authMethod(HttpMethod.Put, path, T::class, body)
 
-@KtorDsl
 fun Route.authPost(path: String, body: suspend RoutingContext.(userId: Long) -> Unit) = authMethod(HttpMethod.Post, path, body)

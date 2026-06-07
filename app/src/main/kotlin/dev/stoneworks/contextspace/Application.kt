@@ -19,8 +19,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 fun main(args: Array<String>) = EngineMain.main(args)
 
@@ -37,7 +37,7 @@ fun Application.module() {
     }
 
     runBlocking {
-        newSuspendedTransaction {
+        suspendTransaction {
             SchemaUtils.create(Users)
         }
     }

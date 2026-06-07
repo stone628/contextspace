@@ -20,26 +20,26 @@ dependencies {
     implementation("io.ktor:ktor-server-config-yaml")
     implementation("io.ktor:ktor-server-cors")
 
-    implementation("org.jetbrains.exposed:exposed-core:0.57.0")
-    implementation("org.jetbrains.exposed:exposed-dao:0.57.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.57.0")
-    implementation("org.jetbrains.exposed:exposed-json:0.57.0")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.57.0")
+    implementation("org.jetbrains.exposed:exposed-core:1.3.0")
+    implementation("org.jetbrains.exposed:exposed-dao:1.3.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.3.0")
+    implementation("org.jetbrains.exposed:exposed-json:1.3.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:1.3.0")
 
-    implementation("org.postgresql:postgresql:42.7.7")
-    implementation("com.zaxxer:HikariCP:6.2.1")
+    implementation("org.postgresql:postgresql:42.7.11")
+    implementation("com.zaxxer:HikariCP:7.0.2")
 
-    implementation("io.lettuce:lettuce-core:6.5.1.RELEASE")
+    implementation("io.lettuce:lettuce-core:7.6.0.RELEASE")
 
     implementation("at.favre.lib:bcrypt:0.10.2")
 
-    implementation("ch.qos.logback:logback-classic:1.5.16")
+    implementation("ch.qos.logback:logback-classic:1.5.34")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation(kotlin("test"))
-    testImplementation("org.jetbrains.exposed:exposed-dao:0.57.0")
-    testImplementation("com.h2database:h2:2.3.232")
-    testImplementation("org.jetbrains.exposed:exposed-java-time:0.57.0")
+    testImplementation("org.jetbrains.exposed:exposed-dao:1.3.0")
+    testImplementation("com.h2database:h2:2.4.240")
+    testImplementation("org.jetbrains.exposed:exposed-java-time:1.3.0")
     testImplementation("io.ktor:ktor-client-content-negotiation")
 }
 

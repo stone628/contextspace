@@ -1,9 +1,9 @@
 package dev.stoneworks.common.util
 
 import kotlinx.coroutines.delay
-import org.jetbrains.exposed.exceptions.ExposedSQLException
-import org.jetbrains.exposed.sql.Transaction
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 suspend fun <T> retryTransaction(
     maxRetries: Int = 3,
@@ -12,11 +12,11 @@ suspend fun <T> retryTransaction(
 ): T {
     repeat(maxRetries - 1) { attempt ->
         try {
-            return newSuspendedTransaction { block() }
+            return suspendTransaction { block() }
         } catch (_: ExposedSQLException) {
             delay(baseDelayMs shl attempt)
         }
     }
-    return newSuspendedTransaction { block() }
+    return suspendTransaction { block() }
 }
 

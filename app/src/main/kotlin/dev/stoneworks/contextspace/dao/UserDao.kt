@@ -5,12 +5,12 @@ import dev.stoneworks.contextspace.tables.UserRow
 import dev.stoneworks.contextspace.tables.Users
 import dev.stoneworks.common.util.DateTimeUtil
 import dev.stoneworks.common.util.retryTransaction
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.time.LocalDateTime
 
 object UserDao {
@@ -36,7 +36,7 @@ object UserDao {
         refreshTokenRevoked = row.refreshTokenRevoked,
     )
 
-    suspend fun findByUsername(username: String): UserRow? = newSuspendedTransaction(readOnly = true) {
+    suspend fun findByUsername(username: String): UserRow? = suspendTransaction(readOnly = true) {
         Users.selectAll().where(Users.username eq username).singleOrNull()?.let(::toRow)
     }
 
@@ -60,7 +60,7 @@ object UserDao {
         )
     }
 
-    suspend fun findById(id: Long): UserRow? = newSuspendedTransaction(readOnly = true) {
+    suspend fun findById(id: Long): UserRow? = suspendTransaction(readOnly = true) {
         Users.selectAll().where(Users.id eq id).singleOrNull()?.let(::toRow)
     }
 

@@ -3,9 +3,9 @@ package dev.stoneworks.contextspace.tables
 import dev.stoneworks.common.util.DateTimeUtil
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.javatime.datetime
-import org.jetbrains.exposed.sql.json.jsonb
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.javatime.datetime
+import org.jetbrains.exposed.v1.json.jsonb
 
 object Users : Table("users") {
     val id = long("id").autoIncrement()

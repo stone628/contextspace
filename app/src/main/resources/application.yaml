@@ -14,6 +14,7 @@ database:
 
 redis:
   uri: "redis://localhost:6379"
+  # isCluster: false
 
 jwt:
   authSecret: "change-me-in-production"

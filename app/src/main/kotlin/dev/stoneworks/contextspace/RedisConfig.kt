@@ -1,24 +1,66 @@
 package dev.stoneworks.contextspace
 
-import io.ktor.server.config.ApplicationConfig
-import io.lettuce.core.RedisClient
-import io.lettuce.core.api.StatefulRedisConnection
+import io.ktor.server.config.*
+import io.lettuce.core.*
+import io.lettuce.core.cluster.RedisClusterClient
+import io.lettuce.core.cluster.api.sync.RedisClusterCommands
+
+class RedisConnection internal constructor(
+    private val commands: RedisClusterCommands<String, String>,
+) {
+    fun sync(): RedisClusterCommands<String, String> = commands
+}
 
 object RedisConfig {
 
-    private var client: RedisClient? = null
-    private var connection: StatefulRedisConnection<String, String>? = null
+    private var client: AbstractRedisClient? = null
+    private var writeConn: AutoCloseable? = null
+    private var readConn: AutoCloseable? = null
+    private var writeRedisConn: RedisConnection? = null
+    private var readRedisConn: RedisConnection? = null
 
     fun init(config: ApplicationConfig) {
-        val uri = config.config("redis").property("uri").getString()
-        client = RedisClient.create(uri)
-        connection = client?.connect()
+        val redisConfig = config.config("redis")
+        val uriStr = redisConfig.property("uri").getString()
+        val isCluster = try {
+            redisConfig.property("isCluster").getString().toBoolean()
+        } catch (_: Exception) {
+            false
+        }
+
+        if (isCluster) {
+            val clusterClient = RedisClusterClient.create(uriStr)
+            client = clusterClient
+
+            val wConn = clusterClient.connect()
+            wConn.readFrom = ReadFrom.MASTER
+            writeConn = wConn
+            writeRedisConn = RedisConnection(wConn.sync())
+
+            val rConn = clusterClient.connect()
+            rConn.readFrom = ReadFrom.REPLICA_PREFERRED
+            readConn = rConn
+            readRedisConn = RedisConnection(rConn.sync())
+        } else {
+            val baseUri = RedisURI.create(uriStr)
+            val standaloneClient = RedisClient.create(baseUri)
+            client = standaloneClient
+
+            val primary = standaloneClient.connect()
+            writeConn = primary
+            writeRedisConn = RedisConnection(primary.sync())
+            readConn = primary
+            readRedisConn = writeRedisConn
+        }
     }
 
-    fun connection(): StatefulRedisConnection<String, String>? = connection
+    fun writeConnection(): RedisConnection? = writeRedisConn
+
+    fun readConnection(): RedisConnection? = readRedisConn
 
     fun close() {
-        connection?.close()
+        writeConn?.close()
+        if (readConn != null && readConn != writeConn) readConn?.close()
         client?.shutdown()
     }
 }

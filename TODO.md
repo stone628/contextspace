@@ -22,7 +22,10 @@
 - [x] Write unit tests for JWT utils and password hasher
 - [x] Create Gradle wrapper and verify clean build
 
-- [ ] Wire Redis into application logic (configured but unused beyond connection init)
-- [ ] Add logout endpoint to revoke refresh tokens
-- [ ] Add rate limiting on auth endpoints
-- [ ] Add CORS for frontend access
+- [x] Wire Redis into application logic — `RateLimiter` uses Redis INCR+EXPIRE for sliding-window rate limiting on auth endpoints
+- [x] Add logout endpoint (`POST /auth/logout`) that revokes the user's refresh token
+- [x] Add rate limiting on auth endpoints (register: 5/min, login: 10/min, refresh: 20/min per IP)
+- [x] Add CORS for frontend access (all origins, standard headers + methods)
+
+- [ ] Add CI configuration (`.github/workflows/`)
+- [ ] Add username/password validation rules (min length, character constraints)

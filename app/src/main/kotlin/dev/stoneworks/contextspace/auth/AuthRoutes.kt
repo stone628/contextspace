@@ -1,16 +1,27 @@
 package dev.stoneworks.contextspace.auth
 
 import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.DateTimeUtil
+import dev.stoneworks.common.util.RateLimiter
+import dev.stoneworks.common.util.StringUtil
+import dev.stoneworks.common.util.authPost
 import dev.stoneworks.contextspace.dao.UserDao
 import dev.stoneworks.contextspace.models.*
-import dev.stoneworks.common.util.DateTimeUtil
-import dev.stoneworks.common.util.StringUtil
 import io.ktor.http.*
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
+private fun clientIp(call: ApplicationCall): String =
+    call.request.headers["X-Forwarded-For"]?.split(",")?.first()?.trim()
+        ?: "dev"
+
 fun Route.authRoutes() {
     post<RegisterRequest>("/auth/register") { request ->
+        if (RateLimiter.isLimited("rl:register:${clientIp(call)}", 5, 60)) {
+            return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
+        }
+
         if (request.username.isBlank() || request.password.isBlank()) {
             call.respond(HttpStatusCode.BadRequest, ErrorResponse("Username and password are required"))
             return@post
@@ -35,6 +46,10 @@ fun Route.authRoutes() {
     }
 
     post<LoginRequest>("/auth/login") { request ->
+        if (RateLimiter.isLimited("rl:login:${clientIp(call)}", 10, 60)) {
+            return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
+        }
+
         val user = UserDao.findByUsername(request.username)
             ?: run {
                 call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Invalid credentials"))
@@ -56,6 +71,10 @@ fun Route.authRoutes() {
     }
 
     post<RefreshRequest>("/auth/refresh") { request ->
+        if (RateLimiter.isLimited("rl:refresh:${clientIp(call)}", 20, 60)) {
+            return@post call.respond(HttpStatusCode.TooManyRequests, ErrorResponse("Too many requests"))
+        }
+
         var userId: Long? = null
 
         if (!request.authToken.isNullOrBlank()) {
@@ -97,5 +116,10 @@ fun Route.authRoutes() {
 
         UserDao.saveRefreshToken(user.id, newRefreshToken, expiresAt)
         call.respond(HttpStatusCode.OK, AuthResponse(authToken = newAuthToken, refreshToken = newRefreshToken))
+    }
+
+    authPost("/auth/logout") { userId ->
+        UserDao.revokeRefreshToken(userId)
+        call.respond(HttpStatusCode.OK, ErrorResponse("Logged out"))
     }
 }

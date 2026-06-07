@@ -22,3 +22,16 @@ jwt:
   refreshSecret: "change-me-too-in-production"
   refreshIssuer: "contextspace"
   refreshExpiresInDays: 7
+
+cors:
+  allowed_hosts:
+    - "*"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+  allowed_headers:
+    - "Content-Type"
+    - "Authorization"
+  allow_credentials: true

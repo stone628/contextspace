@@ -3,10 +3,36 @@ package dev.stoneworks.common.util
 import dev.stoneworks.common.component.JwtUtils
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.config.ApplicationConfig
+import io.ktor.server.plugins.cors.CORSConfig
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*
 import kotlin.reflect.KClass
+
+@KtorDsl
+fun CORSConfig.fromConfig(config: ApplicationConfig) {
+    val allowedHosts = config.propertyOrNull("cors.allowed_hosts")?.getList() ?: emptyList()
+    val allowedMethods = config.propertyOrNull("cors.allowed_methods")?.getList() ?: emptyList()
+    val allowedHeaders = config.propertyOrNull("cors.allowed_headers")?.getList() ?: emptyList()
+
+    allowCredentials = config.propertyOrNull("cors.allow_credentials")?.getString()?.toBoolean() ?: false
+
+    // Apply allowed hosts
+    allowedHosts.forEach { host ->
+        if (host == "*") anyHost() else allowHost(host)
+    }
+
+    // Apply allowed methods
+    allowedMethods.forEach { method ->
+        allowMethod(HttpMethod.parse(method))
+    }
+
+    // Apply allowed headers
+    allowedHeaders.forEach { header ->
+        allowHeader(header)
+    }
+}
 
 private fun userId(call: ApplicationCall): Long? {
     val header = call.request.header("Authorization") ?: return null
@@ -76,5 +102,3 @@ inline fun <reified T: Any> Route.authPut(path: String, noinline body: suspend R
 
 @KtorDsl
 fun Route.authPost(path: String, body: suspend RoutingContext.(userId: Long) -> Unit) = authMethod(HttpMethod.Post, path, body)
-
-

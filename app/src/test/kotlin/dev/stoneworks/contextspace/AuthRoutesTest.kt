@@ -1,7 +1,9 @@
 package dev.stoneworks.contextspace
 
 import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.util.InvalidRequestException
 import dev.stoneworks.common.util.StringUtil
+import dev.stoneworks.common.util.UnauthorizedException
 import dev.stoneworks.contextspace.auth.accountRoutes
 import dev.stoneworks.contextspace.auth.authRoutes
 import dev.stoneworks.contextspace.models.AuthResponse
@@ -59,6 +61,12 @@ private fun Application.testModule() {
     }
 
     install(StatusPages) {
+        exception<UnauthorizedException> { call, cause ->
+            call.respond(HttpStatusCode.Unauthorized, ErrorResponse(cause.message!!))
+        }
+        exception<InvalidRequestException> { call, cause ->
+            call.respond(HttpStatusCode.BadRequest, ErrorResponse(cause.message!!))
+        }
         exception<Throwable> { call, cause ->
             call.respond(HttpStatusCode.InternalServerError, ErrorResponse(cause.message ?: "Internal error"))
         }
@@ -335,5 +343,41 @@ class AuthRoutesTest {
             setBody(UpdateNicknameRequest(nickname = ""))
         }
         assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun `logout with valid token returns ok`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val loginResponse = client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(LoginRequest(username = "testuser", password = "testpass"))
+        }
+        val loginBody = loginResponse.body<AuthResponse>()
+
+        val response = client.post("/auth/logout") {
+            bearerAuth(loginBody.authToken)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun `logout without token returns unauthorized`() = testApplication {
+        application { testModule() }
+
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        val response = client.post("/auth/logout")
+        assertEquals(HttpStatusCode.Unauthorized, response.status)
     }
 }

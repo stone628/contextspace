@@ -1,5 +1,6 @@
 package dev.stoneworks.contextspace.auth
 
+import dev.stoneworks.common.util.InvalidParameterException
 import dev.stoneworks.common.util.authGet
 import dev.stoneworks.common.util.authPut
 import dev.stoneworks.contextspace.dao.UserDao
@@ -21,7 +22,7 @@ fun Route.accountRoutes() {
 
     authPut<UpdateNicknameRequest>("/account/profile") { userId, request ->
         if (request.nickname.isBlank()) {
-            return@authPut call.respond(HttpStatusCode.BadRequest, ErrorResponse("Nickname must not be empty"))
+            throw InvalidParameterException(call, "Nickname must not be empty")
         }
 
         val user = UserDao.updateNickname(userId, request.nickname) ?: run {

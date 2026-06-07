@@ -2,6 +2,7 @@ package dev.stoneworks.contextspace.auth
 
 import dev.stoneworks.common.component.JwtUtils
 import dev.stoneworks.common.util.DateTimeUtil
+import dev.stoneworks.common.util.InvalidParameterException
 import dev.stoneworks.common.util.RateLimiter
 import dev.stoneworks.common.util.StringUtil
 import dev.stoneworks.common.util.authPost
@@ -23,8 +24,7 @@ fun Route.authRoutes() {
         }
 
         if (request.username.isBlank() || request.password.isBlank()) {
-            call.respond(HttpStatusCode.BadRequest, ErrorResponse("Username and password are required"))
-            return@post
+            throw InvalidParameterException(call, "Username and password are required")
         }
 
         val existing = UserDao.findByUsername(request.username)

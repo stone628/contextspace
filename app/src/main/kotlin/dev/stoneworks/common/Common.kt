@@ -7,6 +7,10 @@ import io.ktor.server.config.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.routing.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.Table
@@ -61,20 +65,24 @@ fun Application.common() {
     val config = environment.config
     val registered = registered()
 
-    for (i in registered.inits()) {
-        i(config)
+    runBlocking {
+        coroutineScope {
+            registered.inits().map { initFn ->
+                async(Dispatchers.IO) { initFn(config) }
+            }.awaitAll()
+        }
     }
 
     monitor.subscribe(ApplicationStopping) {
         for (s in registered.shutdowns()) {
-            s()
+            try { s() } catch (_: Exception) { }
         }
     }
 
-    runBlocking {
-        val tables = registered.tables()
+    val tables = registered.tables()
 
-        if (tables.isNotEmpty()) {
+    if (tables.isNotEmpty()) {
+        runBlocking {
             suspendTransaction {
                 SchemaUtils.create(tables = tables.toTypedArray(), inBatch = true)
             }

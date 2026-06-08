@@ -12,6 +12,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentLinkedQueue
 
 abstract class CollectPreloadClassesTask : DefaultTask() {
 
@@ -30,11 +31,11 @@ abstract class CollectPreloadClassesTask : DefaultTask() {
 
     @TaskAction
     fun exec() {
-        val componentClasses = mutableListOf<String>()
+        val preloadClasses = ConcurrentLinkedQueue<String>()
         val ktFiles = sourceFiles.asFileTree.matching { include("**/*.kt") }
         val withFullImport = withImport.get().map { "import $it" }.toHashSet()
 
-        ktFiles.forEach { file ->
+        ktFiles.toList().parallelStream().forEach { file ->
             var hasComponentImport = false
             var packageName: String? = null
 
@@ -65,10 +66,11 @@ abstract class CollectPreloadClassesTask : DefaultTask() {
             if (hasComponentImport) {
                 val className = file.nameWithoutExtension
                 val fullyQualifiedName = if (packageName.isNullOrBlank()) className else "$packageName.$className"
-                componentClasses.add(fullyQualifiedName)
+                preloadClasses.add(fullyQualifiedName)
             }
         }
 
+        val sorted = preloadClasses.sorted()
         val preloadClassName = preloadClassName.get()
         val outputFile = outputDir.file(preloadClassName.replace(".", "/") + ".kt").get().asFile
         outputFile.parentFile.mkdirs()
@@ -83,11 +85,11 @@ abstract class CollectPreloadClassesTask : DefaultTask() {
             }
 
             appendLine("fun preloadClasses() {")
-            componentClasses.forEach { appendLine("    $it") }
+            sorted.forEach { appendLine("    $it") }
             appendLine("}")
         }
 
         outputFile.writeText(content, StandardCharsets.UTF_8)
-        logger.lifecycle("Generated preload classes with ${componentClasses.size} classes at: ${outputFile.absolutePath}")
+        logger.lifecycle("Generated preload classes with ${sorted.size} classes at: ${outputFile.absolutePath}")
     }
 }

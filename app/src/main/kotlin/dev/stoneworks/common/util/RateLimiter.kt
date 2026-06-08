@@ -1,6 +1,6 @@
 package dev.stoneworks.common.util
 
-import dev.stoneworks.contextspace.RedisConfig
+import dev.stoneworks.common.component.RedisConfig
 
 object RateLimiter {
     fun isLimited(key: String, maxRequests: Int, windowSeconds: Long): Boolean {

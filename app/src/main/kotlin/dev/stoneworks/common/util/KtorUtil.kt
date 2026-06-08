@@ -17,19 +17,11 @@ fun CORSConfig.fromConfig(config: ApplicationConfig) {
     allowCredentials = config.propertyOrNull("cors.allow_credentials")?.getString()?.toBoolean() ?: false
 
     // Apply allowed hosts
-    allowedHosts.forEach { host ->
-        if (host == "*") anyHost() else allowHost(host)
-    }
-
+    allowedHosts.forEach { host -> if (host == "*") anyHost() else allowHost(host) }
     // Apply allowed methods
-    allowedMethods.forEach { method ->
-        allowMethod(HttpMethod.parse(method))
-    }
-
+    allowedMethods.forEach { method -> allowMethod(HttpMethod.parse(method)) }
     // Apply allowed headers
-    allowedHeaders.forEach { header ->
-        allowHeader(header)
-    }
+    allowedHeaders.forEach { header -> allowHeader(header) }
 }
 
 fun ApplicationCall.clientIp() = request.headers["X-Forwarded-For"]?.split(',')?.first()?.trim() ?: "dev"

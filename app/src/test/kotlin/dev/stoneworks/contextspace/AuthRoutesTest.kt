@@ -1,12 +1,14 @@
 package dev.stoneworks.contextspace
 
+import dev.stoneworks.common.component.DatabaseConfig
 import dev.stoneworks.common.component.JwtUtils
+import dev.stoneworks.common.registered
 import dev.stoneworks.common.util.InvalidParameterException
 import dev.stoneworks.common.util.InvalidRequestException
 import dev.stoneworks.common.util.StringUtil
 import dev.stoneworks.common.util.UnauthorizedException
-import dev.stoneworks.contextspace.auth.accountRoutes
-import dev.stoneworks.contextspace.auth.authRoutes
+import dev.stoneworks.contextspace.route.AccountRoutes
+import dev.stoneworks.contextspace.route.AuthRoutes
 import dev.stoneworks.contextspace.models.AuthResponse
 import dev.stoneworks.contextspace.models.ErrorResponse
 import dev.stoneworks.contextspace.models.LoginRequest
@@ -55,6 +57,8 @@ private val jwtConfig = MapApplicationConfig(
 )
 
 private fun Application.testModule() {
+    @Suppress("UNUSED_EXPRESSION") AuthRoutes
+    @Suppress("UNUSED_EXPRESSION") AccountRoutes
     JwtUtils.init(jwtConfig)
 
     install(ServerContentNegotiation) {
@@ -77,8 +81,7 @@ private fun Application.testModule() {
     }
 
     routing {
-        authRoutes()
-        accountRoutes()
+        registered().routes().forEach { it(this) }
     }
 }
 

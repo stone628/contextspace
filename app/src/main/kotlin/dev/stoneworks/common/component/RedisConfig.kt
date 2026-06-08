@@ -1,5 +1,7 @@
-package dev.stoneworks.contextspace
+package dev.stoneworks.common.component
 
+import dev.stoneworks.common.registerInit
+import dev.stoneworks.common.registerShutdown
 import dev.stoneworks.common.util.logger
 import io.ktor.server.config.*
 import io.lettuce.core.*
@@ -14,6 +16,10 @@ class RedisConnection internal constructor(
 }
 
 object RedisConfig {
+    init {
+        registerInit { config -> init(config) }
+        registerShutdown { close() }
+    }
 
     private var client: AbstractRedisClient? = null
     private var writeConn: AutoCloseable? = null

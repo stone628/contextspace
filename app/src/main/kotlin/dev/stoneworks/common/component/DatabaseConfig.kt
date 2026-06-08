@@ -1,11 +1,17 @@
-package dev.stoneworks.contextspace
+package dev.stoneworks.common.component
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.config.ApplicationConfig
+import dev.stoneworks.common.registerInit
+import dev.stoneworks.common.registerShutdown
+import io.ktor.server.config.*
 import org.jetbrains.exposed.v1.jdbc.Database
 
 object DatabaseConfig {
+    init {
+        registerInit { config -> init(config) }
+        registerShutdown { close() }
+    }
 
     private var dataSource: HikariDataSource? = null
 

@@ -1,5 +1,6 @@
 package dev.stoneworks.contextspace.tables
 
+import dev.stoneworks.common.registerTable
 import dev.stoneworks.common.util.DateTimeUtil
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -8,6 +9,10 @@ import org.jetbrains.exposed.v1.javatime.datetime
 import org.jetbrains.exposed.v1.json.jsonb
 
 object Users : Table("users") {
+    init {
+        registerTable(this)
+    }
+
     val id = long("id").autoIncrement()
     val username = varchar("username", 64).uniqueIndex()
     val content = jsonb<UsersContent>("content", Json.Default)

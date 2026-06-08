@@ -3,6 +3,7 @@ package dev.stoneworks.common.component
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.interfaces.DecodedJWT
+import dev.stoneworks.common.registerInit
 import dev.stoneworks.common.util.DateTimeUtil
 import io.ktor.server.config.ApplicationConfig
 import java.time.LocalDateTime
@@ -10,6 +11,9 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 object JwtUtils {
+    init {
+        registerInit { config -> init(config) }
+    }
 
     private lateinit var authAlgorithm: Algorithm
     private lateinit var refreshAlgorithm: Algorithm

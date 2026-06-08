@@ -6,7 +6,12 @@ import dev.stoneworks.common.registerInit
 import dev.stoneworks.common.registerShutdown
 import dev.stoneworks.common.util.logger
 import io.ktor.server.config.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.json.jsonb
 import kotlin.time.measureTime
 
 object DatabaseConfig {
@@ -41,4 +46,23 @@ object DatabaseConfig {
     fun close() {
         dataSource?.close()
     }
+
+    val defaultJsonConfig = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+}
+
+inline fun <reified T : Any> Table.jsonContent(
+    name: String,
+): Column<T> {
+    val kSerializer = serializer<T>()
+    val jc = DatabaseConfig.defaultJsonConfig
+
+    return jsonb(
+        name,
+        { jc.encodeToString(kSerializer, it) },
+        { jc.decodeFromString(kSerializer, it) },
+        false
+    )
 }

@@ -22,5 +22,7 @@ Three classes are tied together for each table:
 Steps to add a new table (e.g. `widgets`):
 
 1. Create `tables/Widgets.kt` — `object Widgets : Table("widgets")` with `id`, index columns, `jsonb<WidgetsContent>("content", Json.Default)`, and `createdAt`. Add `WidgetsRow` with the same fields as `WidgetsContent` expanded at the top level. Add `WidgetsContent` — a `@Serializable` data class with all non-indexed fields (use `Long?` for timestamps, not `LocalDateTime`).
-2. Create `dao/WidgetDao.kt` — read/write `it[Widgets.content]` as the whole document, map via `toRow`/`toContent`.
-3. Register in `Application.kt` via `SchemaUtils.create(Widgets, ...)`.
+2. In the `init` block, call `registerTable(this)` — auto-registers for schema creation.
+3. Create `dao/WidgetDao.kt` — read/write `it[Widgets.content]` as the whole document, map via `toRow`/`toContent`.
+
+Registration is automatic: `CollectPreloadClassesTask` scans for files importing `registerTable`, generates `PreloadClasses.kt` with `preloadClasses()` that forces object init. `Application.common()` iterates `registered().tables()` and calls `SchemaUtils.create` in batch. No manual wiring in `Application.kt`.

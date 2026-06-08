@@ -3,3 +3,6 @@
 /.kotlin/
 /build/
 /app/build/
+/buildSrc/.gradle/
+/buildSrc/.kotlin/
+/buildSrc/build/

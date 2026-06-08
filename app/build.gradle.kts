@@ -1,3 +1,5 @@
+import dev.stoneworks.gradle.CollectPreloadClassesTask
+
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
@@ -48,95 +50,24 @@ tasks.test {
     useJUnitPlatform()
 }
 
-abstract class CollectPreloadClassesTask : DefaultTask() {
-    @get:Incremental
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceFiles: ConfigurableFileCollection
-
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
-
-    private val withImport = listOf(
+val collectPreloadClasses = tasks.register<CollectPreloadClassesTask>("collectPreloadClasses") {
+    sourceFiles.from(project.fileTree("src/main/kotlin"))
+    outputDir.set(project.layout.buildDirectory.dir("generated/sources/preload/kotlin/main"))
+    withImport.addAll(
         "dev.stoneworks.common.registerInit",
         "dev.stoneworks.common.registerShutdown",
         "dev.stoneworks.common.registerTable",
         "dev.stoneworks.common.registerRoute",
     )
-
-    private val preloadClassCanonicalName = "dev.stoneworks.common.PreloadClasses"
-
-    @TaskAction
-    fun run() {
-        val componentClasses = mutableListOf<String>()
-        val ktFiles = sourceFiles.asFileTree.matching { include("**/*.kt") }
-        val withFullImport = withImport.map { "import $it" }.toHashSet()
-
-        ktFiles.forEach { file ->
-            var hasComponentImport = false
-            var packageName: String? = null
-
-            file.bufferedReader().useLines { lines ->
-                for (line in lines) {
-                    val trimmed = line.trim()
-
-                    if (trimmed.isBlank()) continue
-
-                    if (trimmed.startsWith("package ")) {
-                        packageName = trimmed.substringAfter("package ").trim()
-                        continue
-                    }
-
-                    if (withFullImport.contains(trimmed)) {
-                        hasComponentImport = true
-                        break
-                    }
-
-                    if (!trimmed.startsWith("import ")) break
-                }
-            }
-
-            if (hasComponentImport) {
-                val className = file.nameWithoutExtension
-                val fullyQualifiedName = if (packageName.isNullOrBlank()) className else "$packageName.$className"
-
-                componentClasses.add(fullyQualifiedName)
-            }
-        }
-
-        val outputFile = outputDir.file(preloadClassCanonicalName.replace(".", "/") + ".kt").get().asFile
-
-        outputFile.parentFile.mkdirs()
-
-        val sb = StringBuilder()
-        val separatorPos = preloadClassCanonicalName.lastIndexOf('.')
-
-        sb.appendLine("@file:Suppress(\"UNUSED_EXPRESSION\")")
-
-        if (separatorPos > 0) {
-            sb.appendLine("package ${preloadClassCanonicalName.substring(0, separatorPos)}").appendLine()
-        }
-
-        sb.appendLine("fun preload() {")
-
-        componentClasses.forEach { sb.appendLine("    $it") }
-
-        sb.appendLine("}")
-
-        outputFile.writeText(sb.toString())
-        logger.lifecycle("Generated collected preload classes with ${componentClasses.size} classes at: ${outputFile.absolutePath}")
-    }
-}
-
-val collectPreloadClasses = tasks.register<CollectPreloadClassesTask>("collectPreloadClasses") {
-    sourceFiles.from(project.fileTree("src/main/kotlin"))
-    outputDir.set(project.layout.buildDirectory.dir("generated/sources/preload/kotlin/main"))
+    preloadClassName.set("dev.stoneworks.common.PreloadClasses")
 }
 
 tasks.named("compileKotlin") {
     dependsOn(collectPreloadClasses)
 }
 
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(collectPreloadClasses.flatMap { it.outputDir })
+kotlin {
+    sourceSets.named("main") {
+        kotlin.srcDir(collectPreloadClasses.flatMap { it.outputDir })
+    }
 }

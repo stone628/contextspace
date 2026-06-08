@@ -56,7 +56,7 @@ private object ModuleRegistry: Registered {
 }
 
 fun Application.common() {
-    preload()
+    preloadClasses()
 
     val config = environment.config
     val registered = registered()
